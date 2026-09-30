@@ -632,13 +632,14 @@ public final class TiledCollectionViewLayout: UICollectionViewLayout {
   private func bottomAnchorSlack(contentHeight: CGFloat) -> CGFloat {
     guard anchorsContentToBottom, let collectionView else { return 0 }
 
-    // Safe areas and any caller-supplied inset are already spoken for, so the
-    // conversation only gets what is left.
+    // Only the top is deducted. The bottom inset already holds the content
+    // clear of whatever sits down there — a composer, the home indicator — by
+    // moving it up, so taking it off the height as well would lift the
+    // conversation a second time and leave it short of the edge it is meant to
+    // be resting on.
     let available = collectionView.bounds.height
       - collectionView.safeAreaInsets.top
-      - collectionView.safeAreaInsets.bottom
       - additionalContentInset.top
-      - additionalContentInset.bottom
 
     return max(0, available - contentHeight)
   }
