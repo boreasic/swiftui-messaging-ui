@@ -1288,14 +1288,19 @@ public final class TiledCollectionViewLayout: UICollectionViewLayout {
   private func bottomAnchorSlack(contentHeight: CGFloat) -> CGFloat {
     guard anchorsContentToBottom, let collectionView else { return 0 }
 
-    // Only the top is deducted. The bottom inset already holds the content
-    // clear of whatever sits down there — a composer, the home indicator — by
-    // moving it up, so taking it off the height as well would lift the
-    // conversation a second time and leave it short of the edge it is meant to
-    // be resting on.
+    // Both ends of additionalContentInset come off, and the collection view's
+    // own safeAreaInsets do not: the view ignores the safe area and is handed
+    // it back through additionalContentInset instead, so counting both charges
+    // the notch and the home indicator twice.
+    //
+    // Deducting both ends is also what makes this stop at the right moment.
+    // Slack has to reach zero exactly when the conversation first needs to
+    // scroll — leave the bottom out and it stays positive for content that is
+    // already taller than the visible area, which pushes the list down and
+    // fights every scroll to the bottom.
     let available = collectionView.bounds.height
-      - collectionView.safeAreaInsets.top
       - additionalContentInset.top
+      - additionalContentInset.bottom
 
     return max(0, available - contentHeight)
   }
