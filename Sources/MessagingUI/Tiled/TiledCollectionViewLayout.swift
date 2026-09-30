@@ -1264,7 +1264,7 @@ public final class TiledCollectionViewLayout: UICollectionViewLayout {
       let topInset = anchorY + hiddenEdgeContentInset.top
       let bottomInset = virtualContentHeight - (anchorY - hiddenEdgeContentInset.bottom)
       return UIEdgeInsets(
-        top: -topInset + additionalContentInset.top + bottomAnchorSlack(contentHeight: bottomY - topY),
+        top: -topInset + additionalContentInset.top + bottomAnchorSlack(contentHeight: 0),
         left: additionalContentInset.left,
         bottom: -bottomInset + additionalContentInset.bottom,
         right: additionalContentInset.right
@@ -1275,7 +1275,8 @@ public final class TiledCollectionViewLayout: UICollectionViewLayout {
     let bottomInset = virtualContentHeight - (bounds.bottom - hiddenEdgeContentInset.bottom)
 
     return UIEdgeInsets(
-      top: -topInset + additionalContentInset.top + bottomAnchorSlack(contentHeight: bottomY - topY),
+      top: -topInset + additionalContentInset.top
+        + bottomAnchorSlack(contentHeight: bounds.bottom - bounds.top),
       left: additionalContentInset.left,
       bottom: -bottomInset + additionalContentInset.bottom,
       right: additionalContentInset.right
