@@ -632,6 +632,13 @@ public final class TiledCollectionViewLayout: UICollectionViewLayout {
   private func bottomAnchorSlack(contentHeight: CGFloat) -> CGFloat {
     guard anchorsContentToBottom, let collectionView else { return 0 }
 
+    // Not until the heights are real. Before the first pass at a non-zero
+    // width every item is an estimate, so a long conversation briefly measures
+    // short, takes a large slack, and the scroll-to-bottom that runs on load
+    // aims at a content size that is about to collapse — leaving the reader at
+    // the top of the thread instead of the end of it.
+    guard !needsHeightRecalculation, lastPreparedBoundsWidth > 0 else { return 0 }
+
     // Both ends of additionalContentInset come off, and the collection view's
     // own safeAreaInsets do not: the view ignores the safe area and is handed
     // it back through additionalContentInset instead, so counting both charges
