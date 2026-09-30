@@ -22,6 +22,22 @@ public final class TiledCollectionViewLayout: UICollectionViewLayout {
   /// Use this to add extra space for keyboard, headers, footers, etc.
   public var additionalContentInset: UIEdgeInsets = .zero
 
+  /// Rests content on the bottom of the viewport while it is shorter than the
+  /// viewport, the way a messaging thread starts at the composer and grows
+  /// upwards rather than hanging from the top of an empty screen.
+  ///
+  /// This has to be decided in here rather than by the caller: items are laid
+  /// out on a virtual canvas and clipped with negative insets, so from outside
+  /// `collectionViewContentSize` says nothing about how tall the conversation
+  /// is, and the inset that would reveal it is only reported after the layout
+  /// pass that consumed it. At this point both numbers are known and exact.
+  public var anchorsContentToBottom: Bool = false {
+    didSet {
+      guard anchorsContentToBottom != oldValue else { return }
+      invalidateLayout()
+    }
+  }
+
   /// Size of the header supplementary view (loading indicator at top)
   public var headerSize: CGSize = .zero
 
@@ -575,7 +591,7 @@ public final class TiledCollectionViewLayout: UICollectionViewLayout {
       let topInset = topY
       let bottomInset = virtualContentHeight - bottomY
       return UIEdgeInsets(
-        top: -topInset + additionalContentInset.top,
+        top: -topInset + additionalContentInset.top + bottomAnchorSlack(contentHeight: bottomY - topY),
         left: additionalContentInset.left,
         bottom: -bottomInset + additionalContentInset.bottom,
         right: additionalContentInset.right
@@ -603,10 +619,27 @@ public final class TiledCollectionViewLayout: UICollectionViewLayout {
     let bottomInset = virtualContentHeight - bottomY
 
     return UIEdgeInsets(
-      top: -topInset + additionalContentInset.top,
+      top: -topInset + additionalContentInset.top + bottomAnchorSlack(contentHeight: bottomY - topY),
       left: additionalContentInset.left,
       bottom: -bottomInset + additionalContentInset.bottom,
       right: additionalContentInset.right
     )
+  }
+
+  /// How far to push content down so it rests on the bottom of the viewport.
+  /// Zero once the conversation is tall enough to fill it, which is what keeps
+  /// this from fighting normal scrolling.
+  private func bottomAnchorSlack(contentHeight: CGFloat) -> CGFloat {
+    guard anchorsContentToBottom, let collectionView else { return 0 }
+
+    // Safe areas and any caller-supplied inset are already spoken for, so the
+    // conversation only gets what is left.
+    let available = collectionView.bounds.height
+      - collectionView.safeAreaInsets.top
+      - collectionView.safeAreaInsets.bottom
+      - additionalContentInset.top
+      - additionalContentInset.bottom
+
+    return max(0, available - contentHeight)
   }
 }

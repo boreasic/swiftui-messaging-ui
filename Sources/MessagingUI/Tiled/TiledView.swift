@@ -406,6 +406,15 @@ final class _TiledView<
     }
   }
 
+  /// Rests a conversation shorter than the viewport on its bottom edge rather
+  /// than hanging it from the top. See `TiledCollectionViewLayout`.
+  var anchorsContentToBottom: Bool = false {
+    didSet {
+      guard anchorsContentToBottom != oldValue else { return }
+      tiledLayout.anchorsContentToBottom = anchorsContentToBottom
+    }
+  }
+
   /// Safe area inset from SwiftUI world (passed from GeometryProxy.safeAreaInsets)
   /// This includes also keyboard height when keyboard is presented. and .safeAreaInsets modifier's content.
   var swiftUIWorldSafeAreaInset: EdgeInsets = .init() {
@@ -1276,6 +1285,7 @@ struct TiledViewRepresentable<
   let onTapBackground: (() -> Void)?
   let onDragIntoBottomSafeArea: (() -> Void)?
   let additionalContentInset: EdgeInsets
+  let anchorsContentToBottom: Bool
   let swiftUIWorldSafeAreaInset: EdgeInsets
   let revealConfiguration: RevealConfiguration
   let prependLoader: Loader<PrependLoadingView>?
@@ -1292,6 +1302,7 @@ struct TiledViewRepresentable<
     onTapBackground: (() -> Void)? = nil,
     onDragIntoBottomSafeArea: (() -> Void)? = nil,
     additionalContentInset: EdgeInsets = .init(),
+    anchorsContentToBottom: Bool = false,
     swiftUIWorldSafeAreaInset: EdgeInsets = .init(),
     revealConfiguration: RevealConfiguration = .default,
     prependLoader: Loader<PrependLoadingView>?,
@@ -1307,6 +1318,7 @@ struct TiledViewRepresentable<
     self.onTapBackground = onTapBackground
     self.onDragIntoBottomSafeArea = onDragIntoBottomSafeArea
     self.additionalContentInset = additionalContentInset
+    self.anchorsContentToBottom = anchorsContentToBottom
     self.swiftUIWorldSafeAreaInset = swiftUIWorldSafeAreaInset
     self.revealConfiguration = revealConfiguration
     self.prependLoader = prependLoader
@@ -1334,6 +1346,7 @@ struct TiledViewRepresentable<
       uiView.swiftUIWorldSafeAreaInset = swiftUIWorldSafeAreaInset
     }
 
+    uiView.anchorsContentToBottom = anchorsContentToBottom
     uiView.autoScrollsToBottomOnAppend = scrollPosition.autoScrollsToBottomOnAppend
     uiView.scrollsToBottomOnReplace = scrollPosition.scrollsToBottomOnReplace
     uiView.onTiledScrollGeometryChange = onTiledScrollGeometryChange.map { perform in
@@ -1533,6 +1546,7 @@ public struct TiledView<
   var onTapBackground: (() -> Void)?
   var onDragIntoBottomSafeArea: (() -> Void)?
   var additionalContentInset: EdgeInsets = .init()
+  var anchorsContentToBottom: Bool = false
   var revealConfiguration: RevealConfiguration = .default
   let prependLoader: Loader<PrependLoadingView>?
   let appendLoader: Loader<AppendLoadingView>?
@@ -1549,6 +1563,7 @@ public struct TiledView<
     onTapBackground: (() -> Void)?,
     onDragIntoBottomSafeArea: (() -> Void)?,
     additionalContentInset: EdgeInsets,
+    anchorsContentToBottom: Bool,
     revealConfiguration: RevealConfiguration,
     prependLoader: Loader<PrependLoadingView>?,
     appendLoader: Loader<AppendLoadingView>?,
@@ -1563,6 +1578,7 @@ public struct TiledView<
     self.onTapBackground = onTapBackground
     self.onDragIntoBottomSafeArea = onDragIntoBottomSafeArea
     self.additionalContentInset = additionalContentInset
+    self.anchorsContentToBottom = anchorsContentToBottom
     self.revealConfiguration = revealConfiguration
     self.prependLoader = prependLoader
     self.appendLoader = appendLoader
@@ -1655,6 +1671,7 @@ extension TiledView where PrependLoadingView == Never {
       onTapBackground: onTapBackground,
       onDragIntoBottomSafeArea: onDragIntoBottomSafeArea,
       additionalContentInset: additionalContentInset,
+      anchorsContentToBottom: anchorsContentToBottom,
       revealConfiguration: revealConfiguration,
       prependLoader: loader,
       appendLoader: appendLoader,
@@ -1679,6 +1696,7 @@ extension TiledView where AppendLoadingView == Never {
       onTapBackground: onTapBackground,
       onDragIntoBottomSafeArea: onDragIntoBottomSafeArea,
       additionalContentInset: additionalContentInset,
+      anchorsContentToBottom: anchorsContentToBottom,
       revealConfiguration: revealConfiguration,
       prependLoader: prependLoader,
       appendLoader: loader,
@@ -1703,6 +1721,7 @@ extension TiledView where TypingIndicatorContent == Never {
       onTapBackground: onTapBackground,
       onDragIntoBottomSafeArea: onDragIntoBottomSafeArea,
       additionalContentInset: additionalContentInset,
+      anchorsContentToBottom: anchorsContentToBottom,
       revealConfiguration: revealConfiguration,
       prependLoader: prependLoader,
       appendLoader: appendLoader,
@@ -1727,6 +1746,7 @@ extension TiledView where HeaderContentView == Never {
       onTapBackground: onTapBackground,
       onDragIntoBottomSafeArea: onDragIntoBottomSafeArea,
       additionalContentInset: additionalContentInset,
+      anchorsContentToBottom: anchorsContentToBottom,
       revealConfiguration: revealConfiguration,
       prependLoader: prependLoader,
       appendLoader: appendLoader,
@@ -1751,6 +1771,7 @@ extension TiledView {
         onTapBackground: onTapBackground,
         onDragIntoBottomSafeArea: onDragIntoBottomSafeArea,
         additionalContentInset: additionalContentInset,
+        anchorsContentToBottom: anchorsContentToBottom,
         swiftUIWorldSafeAreaInset: proxy.safeAreaInsets,
         revealConfiguration: revealConfiguration,
         prependLoader: prependLoader,
@@ -1783,6 +1804,22 @@ extension TiledView {
     _ inset: EdgeInsets
   ) -> Self {
     self.additionalContentInset = inset
+    return self
+  }
+
+  /// Rests content on the bottom of the viewport while the conversation is
+  /// shorter than the viewport, so a thread begins at the composer and grows
+  /// upwards instead of hanging from the top of an empty screen. Once the
+  /// content is tall enough to fill the viewport this does nothing.
+  ///
+  /// ```swift
+  /// TiledView(...)
+  ///   .anchorsContentToBottom(true)
+  /// ```
+  public consuming func anchorsContentToBottom(
+    _ isEnabled: Bool = true
+  ) -> Self {
+    self.anchorsContentToBottom = isEnabled
     return self
   }
 
